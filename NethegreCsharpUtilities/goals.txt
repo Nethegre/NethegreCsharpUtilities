@@ -1,0 +1,24 @@
+﻿#Goals for this project below
+
+1. Create everything so that it is generic as possible
+2. Follow the guidance of microsofts class library creation: https://learn.microsoft.com/en-us/previous-versions/dotnet/netframework-4.0/ms229042(v=vs.100) 
+	a. coding conventions doc: https://learn.microsoft.com/en-us/dotnet/csharp/fundamentals/coding-style/coding-conventions
+3. Allow the external codebases to fully customize every feature within the utilities without having to define config for everything 
+	a. we will need to have optional config options, every option should have documented default values
+	b. we don't want to have a bulky setup process for the libraries
+4. Use a good net analyzers if possible: https://learn.microsoft.com/en-us/visualstudio/code-quality/install-net-analyzers?view=vs-2022
+	a. maybe try to get FXCop working although it may not be supported
+	b. general code analysis link: https://learn.microsoft.com/en-us/dotnet/fundamentals/code-analysis/overview#enable-additional-rules
+5. Document everything with the equivalent of JAVADocs and good commenting
+	a. typing "///" in front of methods etc will auto generate summaries for coding objects
+		aa. need to figure out how to document exceptions properly
+	b. can and should use base C# libraries as examples of how things should be documented
+	c. things like resharper use these and could/should be used to see what the output will be like
+5.1 Have the build process generate HTML like files that will be made avialable on the github page with proper links etc.
+	a. potentially use NDoc: https://ndoc.sourceforge.net/
+	b. could also use SHFB (Sand Castle): https://github.com/EWSoftware/SHFB
+6. Complete the base config management libraries
+7. Complete the base log management libraries
+8. Complete the base resource management libraries
+9. Complete the base background threading libraries
+10. Migrate AYAYABot project over to using the libraries
