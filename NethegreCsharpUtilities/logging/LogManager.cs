@@ -10,7 +10,7 @@ namespace nethegre.csharp.util.logging
         private static ConcurrentQueue<Log> logQueue = new ConcurrentQueue<Log>();
         //Log file relative path
         private static string _logFile = ConfigManager.config["logFile"];
-        //Global logging level
+        //Static log level that will apply to every instance of the logger unless overridden
         private static LogLevel _loggingLevel = (LogLevel)Convert.ToInt32(ConfigManager.config["loggingLevel"]);
         //Sleep timer if there are no logs in the queue
         private static int _logProcessSleep = Convert.ToInt32(ConfigManager.config["logProcessSleep"]);
@@ -19,10 +19,12 @@ namespace nethegre.csharp.util.logging
 
         //Instance specific variables
         readonly string className;
+        readonly LogLevel instanceSpecificLogLevel;
 
         public LogManager(Type t)
         {
             className = t.Name;
+            instanceSpecificLogLevel = _loggingLevel;
 
             setupLogFile();
         }
@@ -31,6 +33,14 @@ namespace nethegre.csharp.util.logging
         {
             className = name;
 
+            setupLogFile();
+            instanceSpecificLogLevel = _loggingLevel;
+        }
+
+        public LogManager(string name, LogLevel loggingLevel)
+        {
+            this.className = name;
+            this.instanceSpecificLogLevel = loggingLevel;
             setupLogFile();
         }
 
@@ -83,7 +93,22 @@ namespace nethegre.csharp.util.logging
         }
 
         //Enum used to categorize log levels
-        internal enum LogLevel { DEBUG = 0, INFO = 1, WARN = 2, ERROR = 3 }
+        public enum LogLevel { DEBUG = 0, INFO = 1, WARN = 2, ERROR = 3 }
+
+        /// <summary>
+        /// This is no longer static because we need it to interact with the 
+        /// instance specific logging level so that each class specific instance 
+        /// of the logger can have its own logging level
+        /// </summary>
+        /// <param name="log"></param>
+        internal void addLogToQueue(Log log)
+        {
+            //Check the global logging level and add the log to the queue if it is 
+            if (log.logLevel >= instanceSpecificLogLevel)
+            {
+                logQueue.Enqueue(log);
+            }
+        }
 
         //Static methods used for the background processing
         public static async Task ProcessLogs()
@@ -119,15 +144,6 @@ namespace nethegre.csharp.util.logging
             _logWriter.Close();
             _logWriter.Dispose();
             _logWriter = null; //Setting this to null will allow the _logWriter to bet setup again.
-        }
-
-        internal static void addLogToQueue(Log log)
-        {
-            //Check the global logging level and add the log to the queue if it is 
-            if (log.logLevel >= _loggingLevel)
-            {
-                logQueue.Enqueue(log);
-            }
         }
 
         internal static void setupLogFile()
