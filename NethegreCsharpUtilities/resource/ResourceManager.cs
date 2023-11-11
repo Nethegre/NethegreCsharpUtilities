@@ -3,28 +3,71 @@ using nethegre.csharp.util.logging;
 
 namespace nethegre.csharp.util.resource
 {
-    public class ResourceManager
+    /// <summary>
+    /// A class that provides an easy interface for reading external resource
+    /// files.
+    /// 
+    /// TODO Add functionality that supports the retrieval of resource files from multiple directories
+    /// </summary>
+    public static class ResourceManager
     {
         //Create an instance of the log manager class
         readonly static LogManager log = new LogManager(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType);
+        //Stores the resource directory path that is currently used
+        internal static string _resourceDirectoryPath = ConfigManager.config["resourceDirectory"];
 
-        //Retrieve the file based on the name provided
+        /// <summary>
+        /// Retrieve the file based on the path provided. 
+        /// </summary>
+        /// <param name="fileName"></param>
+        /// <returns></returns>
         public static FileStream retrieveResource(string fileName)
         {
             FileStream resourceFile = null;
-            string resourceFolder = ConfigManager.config["resourceFolder"];
 
             //Determine if the resource exists
-            if (File.Exists(resourceFolder + fileName))
+            if (File.Exists(_resourceDirectoryPath + fileName))
             {
-                resourceFile = File.OpenRead(resourceFolder + fileName);
+                resourceFile = File.OpenRead(_resourceDirectoryPath + fileName);
             }
             else
             {
-                log.warn("Failed to find expected resource [" + fileName + "] in folder [" + resourceFolder + "]");
+                log.warn("Failed to find expected resource [" + fileName + "] in folder [" + _resourceDirectoryPath + "]");
+
+                //Check to make sure that the resource directory exists
+                if (Directory.Exists(_resourceDirectoryPath))
+                {
+                    log.error("Resource directory doesn't exist!");
+                }
             }
 
             return resourceFile;
+        }
+
+        /// <summary>
+        /// Retrieves the value of the resource directory path. By default this value is pulled
+        /// from the config file with the key name "resourceDirectory".
+        /// </summary>
+        /// <returns></returns>
+        public static string getResourceFolderPath()
+        {
+            return _resourceDirectoryPath;
+        }
+
+        /// <summary>
+        /// Sets the value of the resource directory path if the provided path exists. This will
+        /// override the default value found in the config file with the key "resourceDirectory".
+        /// </summary>
+        /// <param name="folderPath"></param>
+        /// <returns></returns>
+        public static void setResourceFolderPath(string folderPath)
+        {
+            //Check to make sure the directory exists
+            if (Directory.Exists(folderPath))
+            {
+                //Set the new resource folder path
+                _resourceDirectoryPath = folderPath;
+            }
         }
     }
 }

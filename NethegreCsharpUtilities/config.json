@@ -1,3 +1,10 @@
 {
-  
+  //logFile: The name of the log file that the logs will be writen to.
+  "logFile": "log.txt",
+  //loggingLevel: Represents the general log level for the whole project. DEBUG = 0, INFO = 1, WARN = 2, ERROR = 3
+  "loggingLevel": "1",
+  //logProcessSleep: The amount of time in ms that the log writer waits before checking the log queue for logs after running out of logs.
+  "logProcessSleep": "20",
+  //resourceDirectory: The default directory that the resource manager checks for resources in.
+  "resourceDirectory": "resources/"
 }

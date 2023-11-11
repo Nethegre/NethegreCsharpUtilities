@@ -6,13 +6,13 @@ namespace nethegre.csharp.util.config
     /// A class that provides an easy interface into a configuration file. 
     /// The default configuration file should be named "config.json" and 
     /// should be placed in the same directory as the utils .dll file.
-    /// The configuration file used can be overriden via the 
+    /// The configuration file used can be overriden via the setConfigFilePath or 
+    /// the addConfigFiles methods which can be used to replace the default config
+    /// file path or add other config files for the project.
     /// 
     /// Implementation:
-    /// A typical implementation example is as follows "nethegre.csharp.util.config.ConfigManager.config['config name'];"
-    ///     The static "config" IConfiguration object can be used as a dictionary 
-    ///     where the key name is the literal string value that corresponds to the
-    ///     key within the config file.
+    /// A typical implementation example is as follows "nethegre.csharp.util.config.ConfigManager.config['item'];"
+    ///     where the 'item' is the name of the configuration key for the item to retrieve.
     ///     
     /// Another implementation that can be used is the "getConfigList" method which 
     ///     returns an array of strings for the key provided.

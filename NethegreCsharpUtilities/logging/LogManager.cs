@@ -4,6 +4,9 @@ using nethegre.csharp.util.config;
 
 namespace nethegre.csharp.util.logging
 {
+    /// <summary>
+    /// A class that provides simple logging functionality.
+    /// </summary>
     public class LogManager
     {
         //Queue that will hold all logs before they are written
@@ -37,6 +40,12 @@ namespace nethegre.csharp.util.logging
             instanceSpecificLogLevel = _loggingLevel;
         }
 
+        /// <summary>
+        /// Allows for the setting of a specific logging level for the instance of the 
+        /// logging class. This constructor will override the default logging level.
+        /// </summary>
+        /// <param name="name"></param>
+        /// <param name="loggingLevel"></param>
         public LogManager(string name, LogLevel loggingLevel)
         {
             this.className = name;
@@ -44,6 +53,10 @@ namespace nethegre.csharp.util.logging
             setupLogFile();
         }
 
+        /// <summary>
+        /// Logs with the LogLevel of ERROR
+        /// </summary>
+        /// <param name="message"></param>
         public void error(string message)
         {
             StackTrace st = new StackTrace();
@@ -51,6 +64,10 @@ namespace nethegre.csharp.util.logging
             addLogToQueue(new Log(logMsg, LogLevel.ERROR));
         }
 
+        /// <summary>
+        /// Logs with the LogLevel of WARN
+        /// </summary>
+        /// <param name="message"></param>
         public void warn(string message)
         {
             StackTrace st = new StackTrace();
@@ -58,6 +75,10 @@ namespace nethegre.csharp.util.logging
             addLogToQueue(new Log(logMsg, LogLevel.WARN));
         }
 
+        /// <summary>
+        /// Logs with the LogLevel of INFO
+        /// </summary>
+        /// <param name="message"></param>
         public void info(string message)
         {
             StackTrace st = new StackTrace();
@@ -65,6 +86,10 @@ namespace nethegre.csharp.util.logging
             addLogToQueue(new Log(logMsg, LogLevel.INFO));
         }
 
+        /// <summary>
+        /// Logs with the LogLevel of DEBUG
+        /// </summary>
+        /// <param name="message"></param>
         public void debug(string message)
         {
             StackTrace st = new StackTrace();
@@ -72,7 +97,9 @@ namespace nethegre.csharp.util.logging
             addLogToQueue(new Log(logMsg, LogLevel.DEBUG));
         }
 
-        //Internal struct used for processing/categorizing logs
+        /// <summary>
+        /// Internal struct used for processing/categorizing logs.
+        /// </summary>
         internal struct Log
         {
             public string message;
@@ -92,7 +119,9 @@ namespace nethegre.csharp.util.logging
             }
         }
 
-        //Enum used to categorize log levels
+        /// <summary>
+        /// Used to define the supported logging levels.
+        /// </summary>
         public enum LogLevel { DEBUG = 0, INFO = 1, WARN = 2, ERROR = 3 }
 
         /// <summary>
@@ -110,7 +139,11 @@ namespace nethegre.csharp.util.logging
             }
         }
 
-        //Static methods used for the background processing
+        /// <summary>
+        /// Method that is used to do the main log processing.
+        /// //TODO Make this so it doesn't have to be called in order to log things.
+        /// </summary>
+        /// <returns></returns>
         public static async Task ProcessLogs()
         {
             //Verify that the log writer is setup
@@ -130,8 +163,8 @@ namespace nethegre.csharp.util.logging
 
                     try
                     {
-                        _logWriter.WriteLine(logToWrite.getFormattedLog());
-                        _logWriter.Flush(); //Immediately write to the file so that it is not lost on app shutdown
+                        await _logWriter.WriteLineAsync(logToWrite.getFormattedLog());
+                        await _logWriter.FlushAsync(); //Immediately write to the file so that it is not lost on app shutdown
                     }
                     catch (Exception ex)
                     {
@@ -142,10 +175,13 @@ namespace nethegre.csharp.util.logging
 
             //Dispose of the _logWriter cleanly on shutdown
             _logWriter.Close();
-            _logWriter.Dispose();
+            await _logWriter.DisposeAsync();
             _logWriter = null; //Setting this to null will allow the _logWriter to bet setup again.
         }
 
+        /// <summary>
+        /// The basic method that verifies that the log file exists
+        /// </summary>
         internal static void setupLogFile()
         {
             //Check if logging file exists and create it if it doesn't
