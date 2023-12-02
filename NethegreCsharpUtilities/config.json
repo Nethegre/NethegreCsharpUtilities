@@ -1,6 +1,8 @@
 {
   //logFile: The name of the log file that the logs will be writen to.
   "logFile": "log.txt",
+  //logFileCreateLine: The string that will be appended to the log file if/when the log manager creates it. NOTE: Requires there to be a {0} in the string which will be replaced the current date.
+  "logFileCreateLine": "Created log file on {0} \n",
   //loggingLevel: Represents the general log level for the whole project. DEBUG = 0, INFO = 1, WARN = 2, ERROR = 3
   "loggingLevel": "1",
   //logProcessSleep: The amount of time in ms that the log writer waits before checking the log queue for logs after running out of logs.

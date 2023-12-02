@@ -17,14 +17,25 @@ namespace nethegre.csharp.util.logging
         private static LogLevel _loggingLevel = (LogLevel)Convert.ToInt32(ConfigManager.config["loggingLevel"]);
         //Sleep timer if there are no logs in the queue
         private static int _logProcessSleep = Convert.ToInt32(ConfigManager.config["logProcessSleep"]);
+        //String that will be appended to the log file when the log manager creates the log file.
+        private static string _logFileCreateLine = ConfigManager.config["logFileCreateLine"];
         //Write stream for the log file
         private static StreamWriter _logWriter = null;
+        //Used to stop the log processing
+        private static bool _shutdown = false;
+        //Used to track if the log processing has been started or not
+        private static Task _backgroundProcessing = null;
 
         //Instance specific variables
         readonly string className;
         readonly LogLevel instanceSpecificLogLevel;
 
-        public LogManager(Type t)
+        /// <summary>
+        /// Default constructor for the log manager, inherits the log level from the
+        /// global setting.
+        /// </summary>
+        /// <param name="t"></param>
+        public LogManager(Type t) : this()
         {
             className = t.Name;
             instanceSpecificLogLevel = _loggingLevel;
@@ -32,7 +43,12 @@ namespace nethegre.csharp.util.logging
             setupLogFile();
         }
 
-        public LogManager(string name)
+        /// <summary>
+        /// Default constructor for the log manager, inherits the log level from the
+        /// global setting.
+        /// </summary>
+        /// <param name="name"></param>
+        public LogManager(string name) : this()
         {
             className = name;
 
@@ -46,11 +62,61 @@ namespace nethegre.csharp.util.logging
         /// </summary>
         /// <param name="name"></param>
         /// <param name="loggingLevel"></param>
-        public LogManager(string name, LogLevel loggingLevel)
+        public LogManager(string name, LogLevel loggingLevel) : this()
         {
             this.className = name;
             this.instanceSpecificLogLevel = loggingLevel;
             setupLogFile();
+        }
+
+        /// <summary>
+        /// Allows for the setting of a specific logging level for the instance of the 
+        /// logging class. This constructor will override the default logging level.
+        /// </summary>
+        /// <param name="t"></param>
+        /// <param name="loggingLevel"></param>
+        public LogManager(Type t, LogLevel loggingLevel) : this()
+        {
+            this.className = t.Name;
+            this.instanceSpecificLogLevel = loggingLevel;
+            setupLogFile();
+        }
+
+        /// <summary>
+        /// Internal constructor that starts the log processing. This guarentees
+        /// that as soon as you instantiate one of the LogManagers that you have
+        /// logs written.
+        /// </summary>
+        private LogManager() 
+        {
+            //Check to make sure that the className is not null
+            if (className == null)
+            {
+                className = this.GetType().Name;
+            }
+
+            //Start the log processing here but only if it hasn't been started yet
+            if (!_shutdown)
+            {
+                //Check to make sure another background process hasn't been started
+                if (_backgroundProcessing == null)
+                {
+                    //Start the processing task
+                    _backgroundProcessing = Task.Run(ProcessLogs);
+                }
+                else
+                {
+                    //Check that the background task has not failed for some reason
+                    if (_backgroundProcessing.IsCanceled || _backgroundProcessing.IsFaulted || _backgroundProcessing.IsCompleted)
+                    {
+                        //Dispose of the background thread so we don't cause a memory leak or something
+                        _backgroundProcessing.Dispose();
+
+                        //Relace the background processing thread with a new instance because it should never stop
+                        _backgroundProcessing = Task.Run(ProcessLogs);
+                    }
+                }
+            }
         }
 
         /// <summary>
@@ -110,7 +176,7 @@ namespace nethegre.csharp.util.logging
             {
                 this.message = message;
                 this.logLevel = logLevel;
-                logTime = DateTime.Now;
+                this.logTime = DateTime.Now;
             }
 
             public string getFormattedLog()
@@ -123,6 +189,17 @@ namespace nethegre.csharp.util.logging
         /// Used to define the supported logging levels.
         /// </summary>
         public enum LogLevel { DEBUG = 0, INFO = 1, WARN = 2, ERROR = 3 }
+
+        /// <summary>
+        /// This will stop log processing for the log manager.
+        /// </summary>
+        public static void shutdown()
+        {
+            //Sleep for sometime before returning to give the process time to write the remaining logs to a file
+            Thread.Sleep(_logProcessSleep * 2);
+            _shutdown = true;
+            Thread.Sleep(_logProcessSleep * 4);
+        }
 
         /// <summary>
         /// This is no longer static because we need it to interact with the 
@@ -141,34 +218,36 @@ namespace nethegre.csharp.util.logging
 
         /// <summary>
         /// Method that is used to do the main log processing.
-        /// //TODO Make this so it doesn't have to be called in order to log things.
         /// </summary>
         /// <returns></returns>
-        public static async Task ProcessLogs()
+        private static async Task ProcessLogs()
         {
             //Verify that the log writer is setup
             setupLogFile();
 
-            //Sleep if the queue is empty before trying to log again
-            if (logQueue.IsEmpty)
+            while (!_shutdown)
             {
-                Thread.Sleep(_logProcessSleep);
-            }
-            else
-            {
-                if (logQueue.TryDequeue(out Log logToWrite))
+                //Sleep if the queue is empty before trying to log again
+                if (logQueue.IsEmpty)
                 {
-                    //Write log to console and to file
-                    Console.WriteLine(logToWrite.getFormattedLog());
+                    Thread.Sleep(_logProcessSleep);
+                }
+                else
+                {
+                    if (logQueue.TryDequeue(out Log logToWrite))
+                    {
+                        //Write log to console and to file
+                        Console.WriteLine(logToWrite.getFormattedLog());
 
-                    try
-                    {
-                        await _logWriter.WriteLineAsync(logToWrite.getFormattedLog());
-                        await _logWriter.FlushAsync(); //Immediately write to the file so that it is not lost on app shutdown
-                    }
-                    catch (Exception ex)
-                    {
-                        Console.WriteLine(DateTime.Now.ToString() + " [LogManager.ProcessLogs] Error - Exception while processing logs [" + ex.Message + "]");
+                        try
+                        {
+                            await _logWriter.WriteLineAsync(logToWrite.getFormattedLog());
+                            await _logWriter.FlushAsync(); //Immediately write to the file so that it is not lost on app shutdown
+                        }
+                        catch (Exception ex)
+                        {
+                            Console.WriteLine(DateTime.Now.ToString() + " [LogManager.ProcessLogs] Error - Exception while processing logs [" + ex.Message + "]");
+                        }
                     }
                 }
             }
@@ -180,23 +259,24 @@ namespace nethegre.csharp.util.logging
         }
 
         /// <summary>
-        /// The basic method that verifies that the log file exists
+        /// The basic method that verifies that the log file exists and creates it if it doesn't.
         /// </summary>
         internal static void setupLogFile()
         {
             //Check if logging file exists and create it if it doesn't
             if (!File.Exists(_logFile))
             {
-                FileStream stream = File.Create(_logFile);
-                stream.Close();
-                stream.Dispose(); //Release stream resources so the file is not locked
+                File.AppendAllText(LogManager._logFile, String.Format(_logFileCreateLine, DateTime.Now));
+                //FileStream stream = File.Create(_logFile);
+                //stream.Close();
+                //stream.Dispose(); //Release stream resources so the file is not locked
             }
 
             //Check if the _logWriter is null
             if (_logWriter == null)
             {
                 //Grab a writeStream for the log file to lock it
-                _logWriter = new StreamWriter(File.OpenWrite(_logFile));
+                _logWriter = new StreamWriter((Stream)File.Open(_logFile, FileMode.Append, FileAccess.Read, FileShare.Read));
             }
         }
     }

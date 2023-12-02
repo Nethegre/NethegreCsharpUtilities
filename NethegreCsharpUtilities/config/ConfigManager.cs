@@ -1,4 +1,6 @@
 ﻿using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Primitives;
+using System.Collections.ObjectModel;
 
 namespace nethegre.csharp.util.config
 {
@@ -32,9 +34,9 @@ namespace nethegre.csharp.util.config
         /// </summary>
         /// <param name="configSectionName"></param>
         /// <returns>The list of string items based on the config section name.</returns>
-        public static List<T> getConfigList<T>(string configSectionName, bool returnEmptyOnFail = true)
+        public static Collection<T> getConfigList<T>(string configSectionName, bool returnEmptyOnFail = true)
         {
-            List<T> configList = new List<T>();
+            Collection<T> configList = new Collection<T>();
 
             try
             {
@@ -65,7 +67,7 @@ namespace nethegre.csharp.util.config
                                 //Return an empty list if the user calls it with that option
                                 if (returnEmptyOnFail)
                                 {
-                                    return new List<T>();
+                                    return new Collection<T>();
                                 }
                             }
                             else
