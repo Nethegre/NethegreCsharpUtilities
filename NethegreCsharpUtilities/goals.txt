@@ -22,3 +22,5 @@
 8. Complete the base resource management libraries
 9. Complete the base background threading libraries
 10. Migrate AYAYABot project over to using the libraries
+11. Start using cancelation tokens for background threads instead of static class level booleans
+

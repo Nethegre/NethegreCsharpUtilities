@@ -220,7 +220,7 @@ namespace nethegre.csharp.util.logging
         /// Method that is used to do the main log processing.
         /// </summary>
         /// <returns></returns>
-        private static async Task ProcessLogs()
+        internal static async Task ProcessLogs()
         {
             //Verify that the log writer is setup
             setupLogFile();
@@ -255,7 +255,7 @@ namespace nethegre.csharp.util.logging
             //Dispose of the _logWriter cleanly on shutdown
             _logWriter.Close();
             await _logWriter.DisposeAsync();
-            _logWriter = null; //Setting this to null will allow the _logWriter to bet setup again.
+            _logWriter = null; //Setting this to null will allow the _logWriter to be setup again.
         }
 
         /// <summary>
