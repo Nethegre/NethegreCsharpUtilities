@@ -14,7 +14,7 @@ namespace nethegre.csharp.util.resource
         //Create an instance of the log manager class
         readonly static LogManager log = new LogManager(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType);
         //Stores the resource directory path that is currently used
-        internal static string _resourceDirectoryPath = ConfigManager.config["resourceDirectory"];
+        internal static string _resourceDirectoryPath = ConfigManager.config["resourceDirectory"] ?? "resources/";
 
         /// <summary>
         /// Retrieve the file based on the path provided. 

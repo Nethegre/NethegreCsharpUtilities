@@ -11,20 +11,26 @@ namespace nethegre.csharp.util.logging
     {
         //Queue that will hold all logs before they are written
         private static ConcurrentQueue<Log> _logQueue = new ConcurrentQueue<Log>();
-        //Log file relative path
-        private static string _logFile = ConfigManager.config["logFile"];
-        //Static log level that will apply to every instance of the logger unless overridden
-        private static LogLevel _loggingLevel = (LogLevel)Convert.ToInt32(ConfigManager.config["loggingLevel"]);
-        //Sleep timer if there are no logs in the queue
-        private static int _logProcessSleep = Convert.ToInt32(ConfigManager.config["logProcessSleep"]);
-        //String that will be appended to the log file when the log manager creates the log file.
-        private static string _logFileCreateLine = ConfigManager.config["logFileCreateLine"];
         //Write stream for the log file
         private static StreamWriter _logWriter = null;
         //Used to stop the log processing
         private static bool _shutdown = false;
         //Used to track if the log processing has been started or not
         private static Task _backgroundProcessing = null;
+
+        //Config variables
+
+        //Log file relative path
+        private static string _logFile;
+
+        //Static log level that will apply to every instance of the logger unless overridden
+        private static LogLevel _loggingLevel;
+
+        //Sleep timer if there are no logs in the queue
+        private static int _logProcessSleep;
+
+        //String that will be appended to the log file when the log manager creates the log file.
+        private static string _logFileCreateLine;
 
         //Instance specific variables
         readonly string className;
@@ -104,6 +110,12 @@ namespace nethegre.csharp.util.logging
         /// </summary>
         private LogManager() 
         {
+            //Steup the config options
+            _logFile = ConfigManager.config["logFile"] ?? "log.txt";
+            _loggingLevel = (LogLevel)Convert.ToInt32(ConfigManager.config["loggingLevel"] ?? "1");
+            _logProcessSleep = Convert.ToInt32(ConfigManager.config["logProcessSleep"] ?? "20");
+            _logFileCreateLine = ConfigManager.config["logFileCreateLine"] ?? "Created log file on {0} \n";
+
             //Start the log processing here but only if it hasn't been started yet
             if (!_shutdown)
             {
