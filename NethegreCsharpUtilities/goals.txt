@@ -23,4 +23,5 @@
 9. Complete the base background threading libraries
 10. Migrate AYAYABot project over to using the libraries
 11. Start using cancelation tokens for background threads instead of static class level booleans
+12. Make all classes instantiate class level variables within default constructor so that config files are optional.
 

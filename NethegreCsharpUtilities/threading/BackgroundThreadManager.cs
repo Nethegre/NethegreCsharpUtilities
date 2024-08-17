@@ -18,14 +18,13 @@ namespace nethegre.csharp.util.threading
         private static ConcurrentDictionary<string, Task> tasks = new ConcurrentDictionary<string, Task>();
 
         //Config variables
-        public static readonly int numberOfAttemptsToAddToDictionary = Convert.ToInt32(ConfigManager.config["numberOfThreadAttempts"]);
+        public static readonly int numberOfAttemptsToAddToDictionary;
 
+        //Default constructor that sets up config variables
         static BackgroundThreadManager()
         {
             //Need to check that the values for the config options are set
-            if (numberOfAttemptsToAddToDictionary <= 0) { numberOfAttemptsToAddToDictionary = 5; }
-
-
+            numberOfAttemptsToAddToDictionary = Convert.ToInt32(ConfigManager.config["numberOfThreadAttempts"] ?? "5");
         }
 
         /// <summary>
