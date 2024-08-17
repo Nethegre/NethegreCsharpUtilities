@@ -1,4 +1,6 @@
 {
+  //backgroundThreadSleepTime: The amount of ms between sleep cycles for the background thread maintenance task
+  "backgroundThreadSleepTime": "50",
   //numberOfThreadAttempts: The number of attempts that the thread manager will try to add a thread to the queue before giving up.
   "numberOfThreadAttempts": "5",
   //logFile: The name of the log file that the logs will be writen to.
