@@ -48,7 +48,7 @@ namespace nethegre.csharp.util.config
         /// <summary>
         /// Controls when a config file is not found if it is removed from the config file list or not. 
         /// </summary>
-        public static bool removeConfigFileIfNotFound = true;
+        internal static bool removeConfigFileIfNotFound = true;
 
         /// <summary>
         /// The key used within a config file to declare any defined, nested config files that should
@@ -81,18 +81,16 @@ namespace nethegre.csharp.util.config
         /// </summary>
         /// <param name="configSectionName"></param>
         /// <returns>The list of string items based on the config section name.</returns>
+        /// TODO Not sure if the returnEmptyOnFail parameter actually changes behaviour because I think it always does this
         public static Collection<T> getConfigList<T>(string configSectionName, bool returnEmptyOnFail = true)
         {
             Collection<T> configList = new Collection<T>();
 
             try
             {
-                //Retreive the config section by the name provided
-                IConfigurationSection configSection = config.GetSection(configSectionName);
-
                 //Thank you to https://stackoverflow.com/questions/41329108/asp-net-core-get-json-array-using-iconfiguration for helping me figure this out
                 //Retrieve the array of strings from the config section if possible
-                string[] configItems = configSection.GetChildren().ToArray().Select(c => c.Value).ToArray();
+                string[] configItems = config.GetSection(configSectionName).GetChildren().ToArray().Select(c => c.Value).ToArray();
 
                 //Loop through the items and convert them into the desired type and add them to the returned list
                 foreach (string item in configItems)

@@ -45,6 +45,41 @@ namespace nethegre.csharp.util.resource
         }
 
         /// <summary>
+        /// Retrieve all files in the specified folder path. 
+        /// NOTE: The folder path is relative to the base running directory
+        /// and doesn't have the resource directory appended to it. 
+        /// </summary>
+        public static List<FileStream> retrieveResources(string folderPath)
+        {
+            List<FileStream> files = new List<FileStream>();
+
+            //Verify that the provided folder path is not null
+            if (folderPath != null)
+            {
+                //Determine if the directory exists
+                if (Directory.Exists(folderPath))
+                {
+                    //Loop through all the files in the directory
+                    foreach (string filePath in Directory.EnumerateFiles(folderPath))
+                    {
+                        //Retrieve the FileStream for each file in the directory
+                        files.Add(File.OpenRead(filePath));
+                    }
+                }
+                else
+                {
+                    log.error("Directory path provided does not exist");
+                }
+            }
+            else
+            {
+                log.error("The folder path provided was null");
+            }
+
+            return files;
+        }
+
+        /// <summary>
         /// Retrieves the value of the resource directory path. By default this value is pulled
         /// from the config file with the key name "resourceDirectory".
         /// </summary>

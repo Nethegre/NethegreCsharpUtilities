@@ -10,7 +10,7 @@ namespace nethegre.csharp.util.logging
     public class LogManager
     {
         //Queue that will hold all logs before they are written
-        private static ConcurrentQueue<Log> logQueue = new ConcurrentQueue<Log>();
+        private static ConcurrentQueue<Log> _logQueue = new ConcurrentQueue<Log>();
         //Log file relative path
         private static string _logFile = ConfigManager.config["logFile"];
         //Static log level that will apply to every instance of the logger unless overridden
@@ -37,10 +37,8 @@ namespace nethegre.csharp.util.logging
         /// <param name="t"></param>
         public LogManager(Type t) : this()
         {
-            className = t.Name;
-            instanceSpecificLogLevel = _loggingLevel;
-
-            setupLogFile();
+            this.className = sanitizeClassName(t.Name);
+            this.instanceSpecificLogLevel = _loggingLevel;
         }
 
         /// <summary>
@@ -50,10 +48,8 @@ namespace nethegre.csharp.util.logging
         /// <param name="name"></param>
         public LogManager(string name) : this()
         {
-            className = name;
-
-            setupLogFile();
-            instanceSpecificLogLevel = _loggingLevel;
+            this.className = sanitizeClassName(name);
+            this.instanceSpecificLogLevel = _loggingLevel;
         }
 
         /// <summary>
@@ -64,9 +60,8 @@ namespace nethegre.csharp.util.logging
         /// <param name="loggingLevel"></param>
         public LogManager(string name, LogLevel loggingLevel) : this()
         {
-            this.className = name;
+            this.className = sanitizeClassName(name);
             this.instanceSpecificLogLevel = loggingLevel;
-            setupLogFile();
         }
 
         /// <summary>
@@ -77,27 +72,25 @@ namespace nethegre.csharp.util.logging
         /// <param name="loggingLevel"></param>
         public LogManager(Type t, LogLevel loggingLevel) : this()
         {
-            this.className = t.Name;
+            this.className = sanitizeClassName(t.Name);
             this.instanceSpecificLogLevel = loggingLevel;
-            setupLogFile();
         }
 
         /// <summary>
         /// Internal constructor that starts the log processing. This guarentees
         /// that as soon as you instantiate one of the LogManagers that you have
-        /// logs written.
+        /// logs written. Also this needs to be static so that it is thread safe
+        /// AKA, you only have one instances of the constructor creating the 
+        /// background process for logs.
         /// </summary>
-        private LogManager() 
+        private static LogManager() 
         {
-            //Check to make sure that the className is not null
-            if (className == null)
-            {
-                className = this.GetType().Name;
-            }
-
             //Start the log processing here but only if it hasn't been started yet
             if (!_shutdown)
             {
+                //Setup the log file
+                setupLogFile;
+
                 //Check to make sure another background process hasn't been started
                 if (_backgroundProcessing == null)
                 {
@@ -126,7 +119,7 @@ namespace nethegre.csharp.util.logging
         public void error(string message)
         {
             StackTrace st = new StackTrace();
-            string logMsg = "[" + className + "." + st.GetFrame(1).GetMethod().ReflectedType.Name + "] ERROR - " + message;
+            string logMsg = "ERROR [" + className + "." + st.GetFrame(1).GetMethod().Name + "] - " + message;
             addLogToQueue(new Log(logMsg, LogLevel.ERROR));
         }
 
@@ -137,7 +130,7 @@ namespace nethegre.csharp.util.logging
         public void warn(string message)
         {
             StackTrace st = new StackTrace();
-            string logMsg = "[" + className + "." + st.GetFrame(1).GetMethod().ReflectedType.Name + "] WARN - " + message;
+            string logMsg = "WARN [" + className + "." + st.GetFrame(1).GetMethod().ReflectedType.Name + "] - " + message;
             addLogToQueue(new Log(logMsg, LogLevel.WARN));
         }
 
@@ -148,7 +141,7 @@ namespace nethegre.csharp.util.logging
         public void info(string message)
         {
             StackTrace st = new StackTrace();
-            string logMsg = "[" + className + "." + st.GetFrame(1).GetMethod().ReflectedType.Name + "] INFO - " + message;
+            string logMsg = "INFO [" + className + "." + st.GetFrame(1).GetMethod().ReflectedType.Name + "] - " + message;
             addLogToQueue(new Log(logMsg, LogLevel.INFO));
         }
 
@@ -159,7 +152,7 @@ namespace nethegre.csharp.util.logging
         public void debug(string message)
         {
             StackTrace st = new StackTrace();
-            string logMsg = "[" + className + "." + st.GetFrame(1).GetMethod().ReflectedType.Name + "] DEBUG - " + message;
+            string logMsg = "DEBUG [" + className + "." + st.GetFrame(1).GetMethod().ReflectedType.Name + "] - " + message;
             addLogToQueue(new Log(logMsg, LogLevel.DEBUG));
         }
 
@@ -181,7 +174,7 @@ namespace nethegre.csharp.util.logging
 
             public string getFormattedLog()
             {
-                return logTime.ToString() + " " + message;
+                return this.logTime.ToString() + " " + this.message;
             }
         }
 
@@ -212,7 +205,7 @@ namespace nethegre.csharp.util.logging
             //Check the global logging level and add the log to the queue if it is 
             if (log.logLevel >= instanceSpecificLogLevel)
             {
-                logQueue.Enqueue(log);
+                _logQueue.Enqueue(log);
             }
         }
 
@@ -228,13 +221,13 @@ namespace nethegre.csharp.util.logging
             while (!_shutdown)
             {
                 //Sleep if the queue is empty before trying to log again
-                if (logQueue.IsEmpty)
+                if (_logQueue.IsEmpty)
                 {
                     Thread.Sleep(_logProcessSleep);
                 }
                 else
                 {
-                    if (logQueue.TryDequeue(out Log logToWrite))
+                    if (_logQueue.TryDequeue(out Log logToWrite))
                     {
                         //Write log to console and to file
                         Console.WriteLine(logToWrite.getFormattedLog());
@@ -246,7 +239,7 @@ namespace nethegre.csharp.util.logging
                         }
                         catch (Exception ex)
                         {
-                            Console.WriteLine(DateTime.Now.ToString() + " [LogManager.ProcessLogs] Error - Exception while processing logs [" + ex.Message + "]");
+                            Console.WriteLine(DateTime.Now.ToString() + "Error [LogManager.ProcessLogs] - Exception while processing logs [" + ex.Message + "]");
                         }
                     }
                 }
@@ -276,7 +269,20 @@ namespace nethegre.csharp.util.logging
             if (_logWriter == null)
             {
                 //Grab a writeStream for the log file to lock it
-                _logWriter = new StreamWriter((Stream)File.Open(_logFile, FileMode.Append, FileAccess.Read, FileShare.Read));
+                _logWriter = new StreamWriter((Stream)File.Open(_logFile, FileMode.Append, FileAccess.Write, FileShare.Read));
+            }
+        }
+
+        internal string sanitizeClassName(string className)
+        {
+            //Check to make sure that the className is not null
+            if (className == null)
+            {
+                return this.GetType().Name;
+            }
+            else 
+            { 
+                return className; 
             }
         }
     }
