@@ -5,6 +5,7 @@ using System.Collections.ObjectModel;
 using System.IO;
 using System.Reflection.Metadata;
 using System.Runtime.CompilerServices;
+using System.Runtime.ExceptionServices;
 using System.Security.AccessControl;
 using static nethegre.csharp.util.logging.LogManager;
 
@@ -37,9 +38,13 @@ namespace nethegre.csharp.util.config
         /// </summary>
         public static IConfiguration config { 
             get 
-            { 
-                //Check if the _backgroundProcessing is null
-                if (_backgroundProcessing == null) _backgroundProcessing = Task.Run(checkForExternalNestedConfigFiles);
+            {
+                //Need to lock the _backgroundProcessing variable so that another thread/instance doesn't attempt to populate it at the same time
+                lock (_backgroundProcessing)
+                {
+                    //Check if the _backgroundProcessing is null
+                    if (_backgroundProcessing == null) _backgroundProcessing = Task.Run(checkForExternalNestedConfigFiles);
+                }
 
                 return _config; 
             } 
@@ -70,8 +75,6 @@ namespace nethegre.csharp.util.config
 
         //Used to stop background processing
         private static bool _shutdown = false;
-
-        //TODO Need to automatically search for nested config files, maybe with a background thread that checks periodically?
 
         #region publicMethods
 
@@ -117,7 +120,7 @@ namespace nethegre.csharp.util.config
                             }
                             else
                             {
-                                throw ex;
+                                throw;
                             }
                         }
                     }
@@ -309,9 +312,13 @@ namespace nethegre.csharp.util.config
                 Thread.Sleep(1000);
             }
 
-            //Dispose of the background thread on shutdown
-            _backgroundProcessing.Dispose();
-            _backgroundProcessing = null; //Setting this to null will allow it to be setup again.
+            //Need to lock the _backgroundProcessing variable so we can dispose of it cleanly
+            lock (_backgroundProcessing)
+            {
+                //Dispose of the background thread on shutdown
+                _backgroundProcessing.Dispose();
+                _backgroundProcessing = null; //Setting this to null will allow it to be setup again.
+            }
         }
 
         #endregion privateMethods

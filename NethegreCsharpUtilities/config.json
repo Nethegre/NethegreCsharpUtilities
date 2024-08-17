@@ -1,4 +1,6 @@
 {
+  //numberOfThreadAttempts: The number of attempts that the thread manager will try to add a thread to the queue before giving up.
+  "numberOfThreadAttempts": "5",
   //logFile: The name of the log file that the logs will be writen to.
   "logFile": "log.txt",
   //logFileCreateLine: The string that will be appended to the log file if/when the log manager creates it. NOTE: Requires there to be a {0} in the string which will be replaced the current date.

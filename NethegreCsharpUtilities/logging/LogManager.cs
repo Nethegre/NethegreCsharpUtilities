@@ -37,8 +37,22 @@ namespace nethegre.csharp.util.logging
         /// <param name="t"></param>
         public LogManager(Type t) : this()
         {
-            this.className = sanitizeClassName(t.Name);
-            this.instanceSpecificLogLevel = _loggingLevel;
+            if (t != null)
+            {
+                if (t.Name != null)
+                {
+                    this.className = sanitizeName(t.Name);
+                    this.instanceSpecificLogLevel = _loggingLevel;
+                }
+                else
+                {
+                    throw new ArgumentNullException(nameof(t) + ".Name");
+                }
+            }
+            else
+            {
+                throw new ArgumentNullException("t");
+            }
         }
 
         /// <summary>
@@ -48,7 +62,7 @@ namespace nethegre.csharp.util.logging
         /// <param name="name"></param>
         public LogManager(string name) : this()
         {
-            this.className = sanitizeClassName(name);
+            this.className = sanitizeName(name);
             this.instanceSpecificLogLevel = _loggingLevel;
         }
 
@@ -60,7 +74,7 @@ namespace nethegre.csharp.util.logging
         /// <param name="loggingLevel"></param>
         public LogManager(string name, LogLevel loggingLevel) : this()
         {
-            this.className = sanitizeClassName(name);
+            this.className = sanitizeName(name);
             this.instanceSpecificLogLevel = loggingLevel;
         }
 
@@ -72,44 +86,56 @@ namespace nethegre.csharp.util.logging
         /// <param name="loggingLevel"></param>
         public LogManager(Type t, LogLevel loggingLevel) : this()
         {
-            this.className = sanitizeClassName(t.Name);
-            this.instanceSpecificLogLevel = loggingLevel;
+            if (t != null)
+            {
+                this.className = sanitizeName(t.Name);
+                this.instanceSpecificLogLevel = loggingLevel;
+            }
+            else
+            {
+                throw new ArgumentNullException(nameof(t));
+            }
         }
 
         /// <summary>
         /// Internal constructor that starts the log processing. This guarentees
         /// that as soon as you instantiate one of the LogManagers that you have
-        /// logs written. Also this needs to be static so that it is thread safe
-        /// AKA, you only have one instances of the constructor creating the 
-        /// background process for logs.
+        /// logs written. 
         /// </summary>
-        private static LogManager() 
+        private LogManager() 
         {
             //Start the log processing here but only if it hasn't been started yet
             if (!_shutdown)
             {
                 //Setup the log file
-                setupLogFile;
+                setupLogFile();
 
-                //Check to make sure another background process hasn't been started
-                if (_backgroundProcessing == null)
+                //Need to make sure that only one thread is accessing _backgroundProcessing at the same time or things could get messy
+                lock (_backgroundProcessing) 
                 {
-                    //Start the processing task
-                    _backgroundProcessing = Task.Run(ProcessLogs);
-                }
-                else
-                {
-                    //Check that the background task has not failed for some reason
-                    if (_backgroundProcessing.IsCanceled || _backgroundProcessing.IsFaulted || _backgroundProcessing.IsCompleted)
+                    //Check to make sure another background process hasn't been started
+                    if (_backgroundProcessing == null)
                     {
-                        //Dispose of the background thread so we don't cause a memory leak or something
-                        _backgroundProcessing.Dispose();
-
-                        //Relace the background processing thread with a new instance because it should never stop
+                        //Start the processing task
                         _backgroundProcessing = Task.Run(ProcessLogs);
+                    }
+                    else
+                    {
+                        //Check that the background task has not failed for some reason
+                        if (_backgroundProcessing.IsCanceled || _backgroundProcessing.IsFaulted || _backgroundProcessing.IsCompleted)
+                        {
+                            //Dispose of the background thread so we don't cause a memory leak or something
+                            _backgroundProcessing.Dispose();
+
+                            //Relace the background processing thread with a new instance because it should never stop
+                            _backgroundProcessing = Task.Run(ProcessLogs);
+                        }
                     }
                 }
             }
+
+            //This is to make the compiler happy because className is a required property
+            if (this.className == null) { className = this.GetType().Name; }
         }
 
         /// <summary>
@@ -273,17 +299,24 @@ namespace nethegre.csharp.util.logging
             }
         }
 
-        internal string sanitizeClassName(string className)
+        /// <summary>
+        /// Just makes sure that the name passed into it is not null.
+        /// Will set it to the this.GetType().Name if it is.
+        /// </summary>
+        /// <param name="name"></param>
+        /// <returns></returns>
+        internal string sanitizeName(string name)
         {
-            //Check to make sure that the className is not null
-            if (className == null)
+            //Check to make sure that the name is not null
+            if (name == null)
             {
                 return this.GetType().Name;
             }
             else 
             { 
-                return className; 
+                return name; 
             }
         }
+
     }
 }

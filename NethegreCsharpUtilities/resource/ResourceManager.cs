@@ -45,10 +45,11 @@ namespace nethegre.csharp.util.resource
         }
 
         /// <summary>
-        /// Retrieve all files in the specified folder path. 
-        /// NOTE: The folder path is relative to the base running directory
-        /// and doesn't have the resource directory appended to it. 
+        /// Returns all of the files in the directory path.
+        /// NOTE: The directory path starts at the root directory of the project.
         /// </summary>
+        /// <param name="folderPath"></param>
+        /// <returns></returns>
         public static List<FileStream> retrieveResources(string folderPath)
         {
             List<FileStream> files = new List<FileStream>();
@@ -62,8 +63,15 @@ namespace nethegre.csharp.util.resource
                     //Loop through all the files in the directory
                     foreach (string filePath in Directory.EnumerateFiles(folderPath))
                     {
-                        //Retrieve the FileStream for each file in the directory
-                        files.Add(File.OpenRead(filePath));
+                        try
+                        {
+                            //Retrieve the FileStream for each file in the directory
+                            files.Add(File.OpenRead(filePath));
+                        }
+                        catch (Exception ex)
+                        {
+                            log.error("Failed to read the file at file path [" + filePath + "]");
+                        }
                     }
                 }
                 else
