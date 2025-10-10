@@ -84,7 +84,6 @@ namespace nethegre.csharp.util.config
         /// </summary>
         /// <param name="configSectionName"></param>
         /// <returns>The list of string items based on the config section name.</returns>
-        /// TODO Not sure if the returnEmptyOnFail parameter actually changes behaviour because I think it always does this
         public static Collection<T> getConfigList<T>(string configSectionName, bool returnEmptyOnFail = true)
         {
             Collection<T> configList = new Collection<T>();

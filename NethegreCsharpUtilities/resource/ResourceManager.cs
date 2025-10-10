@@ -17,7 +17,7 @@ namespace nethegre.csharp.util.resource
         internal static string _resourceDirectoryPath = ConfigManager.config["resourceDirectory"] ?? "resources/";
 
         /// <summary>
-        /// Retrieve the file based on the path provided. 
+        /// Retrieve the file based on the path provided. Will return null FileStream if the file didn't exist.
         /// </summary>
         /// <param name="fileName"></param>
         /// <returns></returns>
