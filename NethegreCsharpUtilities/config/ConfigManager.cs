@@ -15,8 +15,8 @@ namespace nethegre.csharp.util.config
     /// A class that provides an easy interface into a configuration file. 
     /// The default configuration file should be named "config.json" and 
     /// should be placed in the same directory as the utils .dll file.
-    /// The configuration file used can be overriden via the <see cref="setDefaultConfigFile(string)"/> or 
-    /// the <see cref="addConfigFiles"/> methods which can be used to replace the default config
+    /// The configuration file used can be overriden via the <see cref="SetDefaultConfigFile(string)"/> or 
+    /// the <see cref="AddConfigFiles"/> methods which can be used to replace the default config
     /// file path or add other config files for the project.
     /// <para>
     /// Implementation:
@@ -24,7 +24,7 @@ namespace nethegre.csharp.util.config
     /// where the 'item' is the name of the configuration key for the item to retrieve.
     /// </para>
     /// <para>
-    /// Another implementation that can be used is the <see cref="getConfigList"/> method which 
+    /// Another implementation that can be used is the <see cref="GetConfigList"/> method which 
     /// returns an array of T for the key and type provided.
     /// </para>
     /// </summary>
@@ -43,7 +43,7 @@ namespace nethegre.csharp.util.config
                 lock (_backgroundProcessing)
                 {
                     //Check if the _backgroundProcessing is null
-                    if (_backgroundProcessing == null) _backgroundProcessing = Task.Run(checkForExternalNestedConfigFiles);
+                    if (_backgroundProcessing == null) _backgroundProcessing = Task.Run(CheckForExternalNestedConfigFiles);
                 }
 
                 return _config; 
@@ -62,7 +62,7 @@ namespace nethegre.csharp.util.config
         public const string nestedConfigFileKey = "nestedConfig";
 
         //The actual functional IConfiguration implementation hidden from the public by the readonly "config" item
-        internal static IConfiguration _config = addDefaultConfigFile().Build();
+        internal static IConfiguration _config = AddDefaultConfigFile().Build();
 
         //Save the additional file paths to this static list so that every time we add more we can use the old ones too
         internal static List<string> _configurationFilePaths = new List<string>();
@@ -84,7 +84,7 @@ namespace nethegre.csharp.util.config
         /// </summary>
         /// <param name="configSectionName"></param>
         /// <returns>The list of string items based on the config section name.</returns>
-        public static Collection<T> getConfigList<T>(string configSectionName, bool returnEmptyOnFail = true)
+        public static Collection<T> GetConfigList<T>(string configSectionName, bool returnEmptyOnFail = true)
         {
             Collection<T> configList = new Collection<T>();
 
@@ -141,7 +141,7 @@ namespace nethegre.csharp.util.config
         /// Adds a list of files to the config path if they are valid.
         /// </summary>
         /// <param name="filePaths"></param>
-        public static void addConfigFiles(string[] filePaths)
+        public static void AddConfigFiles(string[] filePaths)
         {
             //Validate that filePaths is not null
             if (filePaths != null)
@@ -165,7 +165,7 @@ namespace nethegre.csharp.util.config
                     }
                 }
 
-                rebuildConfigurationBuilder();
+                RebuildConfigurationBuilder();
             }
             else
             {
@@ -177,7 +177,7 @@ namespace nethegre.csharp.util.config
         /// Overrides the default config file if the provided file path is valid.
         /// </summary>
         /// <param name="filePath"></param>
-        public static void setDefaultConfigFile(string filePath)
+        public static void SetDefaultConfigFile(string filePath)
         {
             //Check to make sure the file exists
             if (File.Exists(filePath))
@@ -185,7 +185,7 @@ namespace nethegre.csharp.util.config
                 _defaultConfigFile = filePath;
 
                 //Remake the ConfigurationBuilder with the new default
-                rebuildConfigurationBuilder();
+                RebuildConfigurationBuilder();
             }
             else
             {
@@ -198,7 +198,7 @@ namespace nethegre.csharp.util.config
         /// files that are defined in any registered config files via the constant
         /// <see cref="nestedConfigFileKey"/> key value. 
         /// </summary>
-        public static void updateNestedConfigFiles()
+        public static void UpdateNestedConfigFiles()
         {
             try
             {
@@ -211,9 +211,9 @@ namespace nethegre.csharp.util.config
                     //configSection.Exists();
 
                     //Check to see if the nestedConfigFileKey exists within the registered config
-                    Collection<string> nestedConfigFiles = getConfigList<string>(nestedConfigFileKey, true);
+                    Collection<string> nestedConfigFiles = GetConfigList<string>(nestedConfigFileKey, true);
 
-                    addConfigFiles(nestedConfigFiles.ToArray());
+                    AddConfigFiles(nestedConfigFiles.ToArray());
                 }
             }
             catch (Exception ex)
@@ -226,7 +226,7 @@ namespace nethegre.csharp.util.config
         /// <summary>
         /// Stops background updating of config files
         /// </summary>
-        public static void shutdown()
+        public static void Shutdown()
         {
             //There is no need for us to wait before setting the shutdown flag as compared to the log writer
             _shutdown = true;
@@ -240,7 +240,7 @@ namespace nethegre.csharp.util.config
         /// Adds the default configuration file to the provided ConfigurationBuilder
         /// </summary>
         /// <param name="builder"></param>
-        internal static void addDefaultConfigFile(ConfigurationBuilder builder)
+        internal static void AddDefaultConfigFile(ConfigurationBuilder builder)
         {
             builder.AddJsonFile(_defaultConfigFile, optional: false, reloadOnChange: true);
         }
@@ -249,7 +249,7 @@ namespace nethegre.csharp.util.config
         /// Adds the default configuration file to the returned ConfigurationBuilder
         /// </summary>
         /// <returns></returns>
-        internal static ConfigurationBuilder addDefaultConfigFile()
+        internal static ConfigurationBuilder AddDefaultConfigFile()
         {
             return (ConfigurationBuilder)new ConfigurationBuilder().AddJsonFile(_defaultConfigFile, optional: false, reloadOnChange: true);
         }
@@ -258,10 +258,10 @@ namespace nethegre.csharp.util.config
         /// Builds a new ConfigurationBuilder and replaces the public static one attached to this class based on
         /// the default and additional config files set by end user.
         /// </summary>
-        internal static void rebuildConfigurationBuilder()
+        internal static void RebuildConfigurationBuilder()
         {
             //Add the default config file
-            ConfigurationBuilder builder = addDefaultConfigFile();
+            ConfigurationBuilder builder = AddDefaultConfigFile();
 
             //Add each of the user added config files
             foreach (string filePath in _configurationFilePaths)
@@ -297,14 +297,14 @@ namespace nethegre.csharp.util.config
         /// will stop processing if <see cref="_shutdown"/> is true. 
         /// </summary>
         /// <returns></returns>
-        internal static async Task checkForExternalNestedConfigFiles()
+        internal static async Task CheckForExternalNestedConfigFiles()
         {
             //TODO Maybe have this be a lambda trigger based on a config file changing
 
             while (!_shutdown)
             {
                 //Check for nested config files
-                updateNestedConfigFiles();
+                UpdateNestedConfigFiles();
 
                 //Wait 1 second before checking the config files again
                 // will maybe consider making this take longer

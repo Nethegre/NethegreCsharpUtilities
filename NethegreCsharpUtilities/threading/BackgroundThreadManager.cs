@@ -40,10 +40,10 @@ namespace nethegre.csharp.util.threading
             {
                 if (_backgroundProcessing == null)
                 {
-                    log.debug("Started up the cleanupCompletedTasks processes after it was null.");
+                    log.Debug("Started up the cleanupCompletedTasks processes after it was null.");
 
                     //Run the cleanup task in the background
-                    _backgroundProcessing = Task.Run(cleanupCompletedTasks);
+                    _backgroundProcessing = Task.Run(CleanupCompletedTasks);
                 }
                 else
                 {
@@ -54,7 +54,7 @@ namespace nethegre.csharp.util.threading
                         _backgroundProcessing.Dispose();
 
                         //Relace the background processing thread with a new instance because it should never stop
-                        _backgroundProcessing = Task.Run(cleanupCompletedTasks);
+                        _backgroundProcessing = Task.Run(CleanupCompletedTasks);
                     }
                 }
             }
@@ -66,7 +66,7 @@ namespace nethegre.csharp.util.threading
         /// if it can.
         /// </summary>
         /// <returns></returns>
-        private static async Task cleanupCompletedTasks()
+        private static async Task CleanupCompletedTasks()
         {
             while (!_shutdown)
             {
@@ -89,34 +89,34 @@ namespace nethegre.csharp.util.threading
                                 if (task.IsCompletedSuccessfully || task.IsCompleted)
                                 {
                                     //The task is completed so we remove it from the dictionary
-                                    log.debug("Found completed task [" + name + "] in the tasks dictionary.");
+                                    log.Debug("Found completed task [" + name + "] in the tasks dictionary.");
 
-                                    removeDisposeTaskFromDictionary(name);
+                                    RemoveDisposeTaskFromDictionary(name);
                                 }
                                 else if (task.IsFaulted || task.IsCanceled)
                                 {
                                     //The task errored so we will log and remove from the dictionary
-                                    log.warn("Found faulted/canceled task with name [" + name + "] in the tasks dictionary.");
+                                    log.Warn("Found faulted/canceled task with name [" + name + "] in the tasks dictionary.");
 
-                                    removeDisposeTaskFromDictionary(name);
+                                    RemoveDisposeTaskFromDictionary(name);
                                 }
                             }
                             else
                             {
-                                log.warn("Retrieved value of [" + name + "] from tasks dictionary but it was null.");
+                                log.Warn("Retrieved value of [" + name + "] from tasks dictionary but it was null.");
 
                                 //Remove the task from the dictionary
-                                removeDisposeTaskFromDictionary(name);
+                                RemoveDisposeTaskFromDictionary(name);
                             }
                         }
                         else
                         {
-                            log.warn("Attempted to check task with name [" + name + "] but failed to retrieve value. Something else is accessing dictionary.");
+                            log.Warn("Attempted to check task with name [" + name + "] but failed to retrieve value. Something else is accessing dictionary.");
                         }
                     }
                     else
                     {
-                        log.error("Found key in tasks dictionary that was null."); //This shouldn't be possible
+                        log.Error("Found key in tasks dictionary that was null."); //This shouldn't be possible
                     }
                 }
 
@@ -130,7 +130,7 @@ namespace nethegre.csharp.util.threading
         /// Generates error logs if the removal fails.
         /// </summary>
         /// <param name="taskName"></param>
-        private static void removeDisposeTaskFromDictionary(string taskName)
+        private static void RemoveDisposeTaskFromDictionary(string taskName)
         {
             //Remove the key with null value from dictionary
             if (tasks.TryRemove(taskName, out Task? task))
@@ -143,21 +143,21 @@ namespace nethegre.csharp.util.threading
                 }
 
                 //Log the succesful removal
-                log.debug("Successfully removed task [" + taskName + "] from the dictionary.");
+                log.Debug("Successfully removed task [" + taskName + "] from the dictionary.");
             }
             else
             {
                 //Log the failure to remove value from dictionary
-                log.error("Failed to remove task named [" + taskName + "] from dictionary.");
+                log.Error("Failed to remove task named [" + taskName + "] from dictionary.");
             }
         }
 
         /// <summary>
         /// Shutsdown the background thread internal processes and attemps to cleanly shut down any running background threads.
         /// </summary>
-        public static void shutdown()
+        public static void Shutdown()
         {
-            log.debug("Starting background tasks shutdown.");
+            log.Debug("Starting background tasks shutdown.");
 
             //Set the shutdown flag so that new tasks are not started
             _shutdown = true;
@@ -172,7 +172,7 @@ namespace nethegre.csharp.util.threading
                     if (task != null)
                     {
                         //Dispose of the task
-                        log.debug("Disposed of task [" + name + "] during shutdown process.");
+                        log.Debug("Disposed of task [" + name + "] during shutdown process.");
 
                         task.Dispose();
                     }
@@ -180,11 +180,11 @@ namespace nethegre.csharp.util.threading
                 else
                 {
                     //Log an error because we couldn't remove a task from the dictionary
-                    log.error("Failed to remove task [" + name + "] from dictionary of tasks.");
+                    log.Error("Failed to remove task [" + name + "] from dictionary of tasks.");
                 }
             }
 
-            log.debug("Completed background tasks shutdown.");
+            log.Debug("Completed background tasks shutdown.");
         }
 
         /// <summary>
@@ -194,13 +194,13 @@ namespace nethegre.csharp.util.threading
         /// <param name="name"></param>
         /// <param name="function"></param>
         /// <returns></returns>
-        public static bool startBackgroundTask(string name, Func<Task?> function)
+        public static bool StartBackgroundTask(string name, Func<Task?> function)
         {
             if (!_shutdown)
             {
                 //Check to make sure that the name and function provided are not null
                 if (name == null) { throw new ArgumentNullException("name"); }
-                validateFunctionOrMethodNameNotNull(function);
+                ValidateFunctionOrMethodNameNotNull(function);
 
                 //Check if a task with the provided name existed in the dictionary
                 if (tasks.ContainsKey(name)) { return false; }
@@ -214,7 +214,7 @@ namespace nethegre.csharp.util.threading
                         //Place the task in the concurrent dictionary
                         if (tasks.TryAdd(name, task))
                         {
-                            log.debug("Successfully added function [" + function.Method.Name + "] to dictionary with placeholder name [" + name + "]");
+                            log.Debug("Successfully added function [" + function.Method.Name + "] to dictionary with placeholder name [" + name + "]");
                             return true;
                         }
                         else
@@ -227,14 +227,14 @@ namespace nethegre.csharp.util.threading
                     }
                     catch (Exception ex)
                     {
-                        log.error("Failed to add task with name [" + name + "] to the dictionary due to exception [" + ex.Message + "]");
+                        log.Error("Failed to add task with name [" + name + "] to the dictionary due to exception [" + ex.Message + "]");
                         return false;
                     }
                 }
             }
             else
             {
-                log.warn("Attempted to start named task [" + name + "] while shutdown is in progress, ignoring.");
+                log.Warn("Attempted to start named task [" + name + "] while shutdown is in progress, ignoring.");
 
                 //Return false because we are not starting any new tasks while shutdown is in progress
                 return false;
@@ -248,10 +248,10 @@ namespace nethegre.csharp.util.threading
         /// </summary>
         /// <param name="function"></param>
         /// <returns></returns>
-        public static string startBackgroundTask(Func<Task?> function)
+        public static string StartBackgroundTask(Func<Task?> function)
         {
             //Validate that function is not null and throw exception if it is
-            validateFunctionOrMethodNameNotNull(function);
+            ValidateFunctionOrMethodNameNotNull(function);
 
             if (!_shutdown)
             {
@@ -269,7 +269,7 @@ namespace nethegre.csharp.util.threading
                     {
                         if (counter >= _numberOfAttemptsToAddToDictionary)
                         {
-                            log.warn("Failed to add function [" + function.Method.Name + "] with name [" + name + "] to the dictionary, max number of attemps reached.");
+                            log.Warn("Failed to add function [" + function.Method.Name + "] with name [" + name + "] to the dictionary, max number of attemps reached.");
 
                             return "";
                         }
@@ -284,16 +284,16 @@ namespace nethegre.csharp.util.threading
                 }
                 catch (Exception ex)
                 {
-                    log.error("Exception while starting task [" + function.Method.Name + "] or adding it to the dictionary [" + ex.Message + "]");
+                    log.Error("Exception while starting task [" + function.Method.Name + "] or adding it to the dictionary [" + ex.Message + "]");
                     throw;
                 }
 
-                log.debug("Started background task with randomly generated name [" + name + "]");
+                log.Debug("Started background task with randomly generated name [" + name + "]");
                 return name;
             }
             else
             {
-                log.warn("Attempted to start an unnamed task [" + function.Method.Name + "] while shutdown is in progress, ignoring.");
+                log.Warn("Attempted to start an unnamed task [" + function.Method.Name + "] while shutdown is in progress, ignoring.");
 
                 //Return blank because shutdown is in progress and we aren't starting a new task
                 return "";
@@ -307,7 +307,7 @@ namespace nethegre.csharp.util.threading
         /// If a task with the provided name was not found it will return TaskStatus.RanToCompletion
         /// </summary>
         /// <param name="taskName"></param>
-        public static TaskStatus getStatusOfTask(string taskName)
+        public static TaskStatus GetStatusOfTask(string taskName)
         {
             //Check if the task is present in the dictionary
             if (tasks.TryGetValue(taskName, out Task task))
@@ -316,13 +316,13 @@ namespace nethegre.csharp.util.threading
                 if (task != null)
                 {
                     //Retrieve the status of the task
-                    log.debug("Retrieved task with name [" + taskName + "] with status [" + task.Status.ToString() + "]");
+                    log.Debug("Retrieved task with name [" + taskName + "] with status [" + task.Status.ToString() + "]");
                     return task.Status;
                 }
                 else
                 {
                     //The task was null
-                    log.warn("Attempted to retrieve task with name [" + taskName + "] but the returned task was null");
+                    log.Warn("Attempted to retrieve task with name [" + taskName + "] but the returned task was null");
 
                     //Return TaskStatus.Faulted because this shouldn't ever happen
                     return TaskStatus.Faulted;
@@ -331,7 +331,7 @@ namespace nethegre.csharp.util.threading
             else
             {
                 //A task with the provided name was not found so it was removed from the queue or didn't exist in the first place
-                log.debug("Attempted to find task with name [" + taskName + "] but didn't find it because it didn't exist or is completed.");
+                log.Debug("Attempted to find task with name [" + taskName + "] but didn't find it because it didn't exist or is completed.");
                 return TaskStatus.RanToCompletion;
             }
         }
@@ -341,20 +341,20 @@ namespace nethegre.csharp.util.threading
         /// </summary>
         /// <param name="taskName"></param>
         /// <returns></returns>
-        public static bool isTaskCompleted(string taskName)
+        public static bool IsTaskCompleted(string taskName)
         {
             //Retrieve the status of the named task
-            TaskStatus status = getStatusOfTask(taskName);
+            TaskStatus status = GetStatusOfTask(taskName);
 
             //Check if the status of the task is completed
             if (status == TaskStatus.RanToCompletion)
             {
-                log.debug("Retrieved status of named task [" + taskName + "] it is completed.");
+                log.Debug("Retrieved status of named task [" + taskName + "] it is completed.");
                 return true;
             }
             else
             {
-                log.debug("Retrieved status of named task [" + taskName + "] it is not completed.");
+                log.Debug("Retrieved status of named task [" + taskName + "] it is not completed.");
                 return false;
             }
         }
@@ -367,7 +367,7 @@ namespace nethegre.csharp.util.threading
         /// </summary>
         /// <param name="function"></param>
         /// <returns></returns>
-        internal static void validateFunctionOrMethodNameNotNull(Func<Task?> function)
+        internal static void ValidateFunctionOrMethodNameNotNull(Func<Task?> function)
         {
             //Check for nulls
             if (function == null) { throw new ArgumentNullException("function"); }

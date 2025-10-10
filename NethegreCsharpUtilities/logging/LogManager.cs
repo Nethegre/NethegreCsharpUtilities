@@ -47,7 +47,7 @@ namespace nethegre.csharp.util.logging
             {
                 if (t.Name != null)
                 {
-                    this.className = sanitizeName(t.Name);
+                    this.className = SanitizeName(t.Name);
                     this.instanceSpecificLogLevel = _loggingLevel;
                 }
                 else
@@ -57,7 +57,7 @@ namespace nethegre.csharp.util.logging
             }
             else
             {
-                throw new ArgumentNullException("t");
+                throw new ArgumentNullException(nameof(t)); //TODO Not sure if this does what I want it to, previously was "t" instead of using nameof()
             }
         }
 
@@ -68,7 +68,7 @@ namespace nethegre.csharp.util.logging
         /// <param name="name"></param>
         public LogManager(string name) : this()
         {
-            this.className = sanitizeName(name);
+            this.className = SanitizeName(name);
             this.instanceSpecificLogLevel = _loggingLevel;
         }
 
@@ -80,7 +80,7 @@ namespace nethegre.csharp.util.logging
         /// <param name="loggingLevel"></param>
         public LogManager(string name, LogLevel loggingLevel) : this()
         {
-            this.className = sanitizeName(name);
+            this.className = SanitizeName(name);
             this.instanceSpecificLogLevel = loggingLevel;
         }
 
@@ -94,7 +94,7 @@ namespace nethegre.csharp.util.logging
         {
             if (t != null)
             {
-                this.className = sanitizeName(t.Name);
+                this.className = SanitizeName(t.Name);
                 this.instanceSpecificLogLevel = loggingLevel;
             }
             else
@@ -120,7 +120,7 @@ namespace nethegre.csharp.util.logging
             if (!_shutdown)
             {
                 //Setup the log file
-                setupLogFile();
+                SetupLogFile();
 
                 //Need to make sure that only one thread is accessing _backgroundProcessing at the same time or things could get messy
                 lock (_backgroundProcessing) 
@@ -154,44 +154,44 @@ namespace nethegre.csharp.util.logging
         /// Logs with the LogLevel of ERROR
         /// </summary>
         /// <param name="message"></param>
-        public void error(string message)
+        public void Error(string message)
         {
             StackTrace st = new StackTrace();
             string logMsg = "ERROR [" + className + "." + st.GetFrame(1).GetMethod().Name + "] - " + message;
-            addLogToQueue(new Log(logMsg, LogLevel.ERROR));
+            AddLogToQueue(new Log(logMsg, LogLevel.ERROR));
         }
 
         /// <summary>
         /// Logs with the LogLevel of WARN
         /// </summary>
         /// <param name="message"></param>
-        public void warn(string message)
+        public void Warn(string message)
         {
             StackTrace st = new StackTrace();
             string logMsg = "WARN [" + className + "." + st.GetFrame(1).GetMethod().ReflectedType.Name + "] - " + message;
-            addLogToQueue(new Log(logMsg, LogLevel.WARN));
+            AddLogToQueue(new Log(logMsg, LogLevel.WARN));
         }
 
         /// <summary>
         /// Logs with the LogLevel of INFO
         /// </summary>
         /// <param name="message"></param>
-        public void info(string message)
+        public void Info(string message)
         {
             StackTrace st = new StackTrace();
             string logMsg = "INFO [" + className + "." + st.GetFrame(1).GetMethod().ReflectedType.Name + "] - " + message;
-            addLogToQueue(new Log(logMsg, LogLevel.INFO));
+            AddLogToQueue(new Log(logMsg, LogLevel.INFO));
         }
 
         /// <summary>
         /// Logs with the LogLevel of DEBUG
         /// </summary>
         /// <param name="message"></param>
-        public void debug(string message)
+        public void Debug(string message)
         {
             StackTrace st = new StackTrace();
             string logMsg = "DEBUG [" + className + "." + st.GetFrame(1).GetMethod().ReflectedType.Name + "] - " + message;
-            addLogToQueue(new Log(logMsg, LogLevel.DEBUG));
+            AddLogToQueue(new Log(logMsg, LogLevel.DEBUG));
         }
 
         /// <summary>
@@ -210,7 +210,7 @@ namespace nethegre.csharp.util.logging
                 this.logTime = DateTime.Now;
             }
 
-            public string getFormattedLog()
+            public string GetFormattedLog()
             {
                 return this.logTime.ToString() + " " + this.message;
             }
@@ -224,7 +224,7 @@ namespace nethegre.csharp.util.logging
         /// <summary>
         /// This will stop log processing for the log manager.
         /// </summary>
-        public static void shutdown()
+        public static void Shutdown()
         {
             //Sleep for sometime before returning to give the process time to write the remaining logs to a file
             Thread.Sleep(_logProcessSleep * 2);
@@ -238,7 +238,7 @@ namespace nethegre.csharp.util.logging
         /// of the logger can have its own logging level
         /// </summary>
         /// <param name="log"></param>
-        internal void addLogToQueue(Log log)
+        internal void AddLogToQueue(Log log)
         {
             //Check the global logging level and add the log to the queue if it is 
             if (log.logLevel >= instanceSpecificLogLevel)
@@ -254,7 +254,7 @@ namespace nethegre.csharp.util.logging
         internal static async Task ProcessLogs()
         {
             //Verify that the log writer is setup
-            setupLogFile();
+            SetupLogFile();
 
             while (!_shutdown)
             {
@@ -268,11 +268,11 @@ namespace nethegre.csharp.util.logging
                     if (_logQueue.TryDequeue(out Log logToWrite))
                     {
                         //Write log to console and to file
-                        Console.WriteLine(logToWrite.getFormattedLog());
+                        Console.WriteLine(logToWrite.GetFormattedLog());
 
                         try
                         {
-                            await _logWriter.WriteLineAsync(logToWrite.getFormattedLog());
+                            await _logWriter.WriteLineAsync(logToWrite.GetFormattedLog());
                             await _logWriter.FlushAsync(); //Immediately write to the file so that it is not lost on app shutdown
                         }
                         catch (Exception ex)
@@ -292,7 +292,7 @@ namespace nethegre.csharp.util.logging
         /// <summary>
         /// The basic method that verifies that the log file exists and creates it if it doesn't.
         /// </summary>
-        internal static void setupLogFile()
+        internal static void SetupLogFile()
         {
             //Check if logging file exists and create it if it doesn't
             if (!File.Exists(_logFile))
@@ -317,7 +317,7 @@ namespace nethegre.csharp.util.logging
         /// </summary>
         /// <param name="name"></param>
         /// <returns></returns>
-        internal string sanitizeName(string name)
+        internal string SanitizeName(string name)
         {
             //Check to make sure that the name is not null
             if (name == null)

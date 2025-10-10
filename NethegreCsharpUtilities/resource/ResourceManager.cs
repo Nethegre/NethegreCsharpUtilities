@@ -21,7 +21,7 @@ namespace nethegre.csharp.util.resource
         /// </summary>
         /// <param name="fileName"></param>
         /// <returns></returns>
-        public static FileStream retrieveResource(string fileName)
+        public static FileStream RetrieveResource(string fileName)
         {
             FileStream resourceFile = null;
 
@@ -32,12 +32,12 @@ namespace nethegre.csharp.util.resource
             }
             else
             {
-                log.warn("Failed to find expected resource [" + fileName + "] in folder [" + _resourceDirectoryPath + "]");
+                log.Warn("Failed to find expected resource [" + fileName + "] in folder [" + _resourceDirectoryPath + "]");
 
                 //Check to make sure that the resource directory exists
                 if (Directory.Exists(_resourceDirectoryPath))
                 {
-                    log.error("Resource directory doesn't exist!");
+                    log.Error("Resource directory doesn't exist!");
                 }
             }
 
@@ -50,7 +50,7 @@ namespace nethegre.csharp.util.resource
         /// </summary>
         /// <param name="folderPath"></param>
         /// <returns></returns>
-        public static List<FileStream> retrieveResources(string folderPath)
+        public static List<FileStream> RetrieveResources(string folderPath)
         {
             List<FileStream> files = new List<FileStream>();
 
@@ -70,18 +70,18 @@ namespace nethegre.csharp.util.resource
                         }
                         catch (Exception ex)
                         {
-                            log.error("Failed to read the file at file path [" + filePath + "]");
+                            log.Error("Failed to read the file at file path [" + filePath + "]");
                         }
                     }
                 }
                 else
                 {
-                    log.error("Directory path provided does not exist");
+                    log.Error("Directory path provided does not exist");
                 }
             }
             else
             {
-                log.error("The folder path provided was null");
+                log.Error("The folder path provided was null");
             }
 
             return files;
@@ -92,7 +92,7 @@ namespace nethegre.csharp.util.resource
         /// from the config file with the key name "resourceDirectory".
         /// </summary>
         /// <returns></returns>
-        public static string getResourceFolderPath()
+        public static string GetResourceFolderPath()
         {
             return _resourceDirectoryPath;
         }
@@ -103,7 +103,7 @@ namespace nethegre.csharp.util.resource
         /// </summary>
         /// <param name="folderPath"></param>
         /// <returns></returns>
-        public static void setResourceFolderPath(string folderPath)
+        public static void SetResourceFolderPath(string folderPath)
         {
             //Check to make sure the directory exists
             if (Directory.Exists(folderPath))
