@@ -42,8 +42,13 @@ namespace nethegre.csharp.util.config
                 //Need to lock the _backgroundProcessing variable so that another thread/instance doesn't attempt to populate it at the same time
                 lock (_backgroundProcessing)
                 {
-                    //Check if the _backgroundProcessing is null
-                    if (_backgroundProcessing == null) _backgroundProcessing = Task.Run(CheckForExternalNestedConfigFiles);
+                    //Check if the _backgroundProcessing has been started
+                    if (!_backgroundProcessingStarted)
+                    {
+                        _backgroundProcessingStarted = true;
+                        //Start the background processing
+                        Task.Run(CheckForExternalNestedConfigFiles);
+                    }
                 }
 
                 return _config; 
@@ -72,6 +77,7 @@ namespace nethegre.csharp.util.config
 
         //Used to track if the log processing has been started or not
         private static Task _backgroundProcessing = null;
+        private static bool _backgroundProcessingStarted = false;
 
         //Used to stop background processing
         private static bool _shutdown = false;
