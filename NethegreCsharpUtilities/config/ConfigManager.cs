@@ -37,18 +37,14 @@ namespace nethegre.csharp.util.config
         /// The default config file can be changed via the setDefaultConfigFile method.
         /// </summary>
         public static IConfiguration config { 
-            get 
+            get
             {
-                //Need to lock the _backgroundProcessing variable so that another thread/instance doesn't attempt to populate it at the same time
-                lock (_backgroundProcessing)
+                //Check if the _backgroundProcessing has been started
+                if (!_backgroundProcessingStarted)
                 {
-                    //Check if the _backgroundProcessing has been started
-                    if (!_backgroundProcessingStarted)
-                    {
-                        _backgroundProcessingStarted = true;
-                        //Start the background processing
-                        Task.Run(CheckForExternalNestedConfigFiles);
-                    }
+                    _backgroundProcessingStarted = true;
+                    //Start the background processing
+                    Task.Run(CheckForExternalNestedConfigFiles);
                 }
 
                 return _config; 
