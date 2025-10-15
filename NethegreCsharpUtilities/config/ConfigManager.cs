@@ -36,19 +36,17 @@ namespace nethegre.csharp.util.config
         /// The default instance of the config file. Defaults to using "config.json" if not otherwise changed.
         /// The default config file can be changed via the setDefaultConfigFile method.
         /// </summary>
-        public static IConfiguration config { 
-            get
-            {
-                //Check if the _backgroundProcessing has been started
-                if (!_backgroundProcessingStarted)
-                {
-                    _backgroundProcessingStarted = true;
-                    //Start the background processing
-                    Task.Run(CheckForExternalNestedConfigFiles);
-                }
-
+        public static IConfiguration config 
+        {
+            get 
+            { 
                 return _config; 
-            } 
+            }
+        }
+
+        static ConfigManager()
+        {
+            _backgroundProcessing = Task.Run(CheckForExternalNestedConfigFiles);
         }
 
         /// <summary>
@@ -72,8 +70,7 @@ namespace nethegre.csharp.util.config
         internal static string _defaultConfigFile = "config.json";
 
         //Used to track if the log processing has been started or not
-        private static Task _backgroundProcessing = null;
-        private static bool _backgroundProcessingStarted = false;
+        private static Task _backgroundProcessing;
 
         //Used to stop background processing
         private static bool _shutdown = false;
