@@ -11,6 +11,6 @@
   "loggingLevel": "1",
   //logProcessSleep: The amount of time in ms that the log writer waits before checking the log queue for logs after running out of logs.
   "logProcessSleep": "20",
-  //resourceDirectory: The default directory that the resource manager checks for resources in.
-  "resourceDirectory": "resources/"
+  //resourceDirectory: The prefix directory path that the resource manager uses when checking for resources.
+  "resourceDirectoryPrefix": "resources/"
 }

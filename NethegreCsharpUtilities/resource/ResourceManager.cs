@@ -1,5 +1,6 @@
 ﻿using nethegre.csharp.util.config;
 using nethegre.csharp.util.logging;
+using System.Collections.ObjectModel;
 
 namespace nethegre.csharp.util.resource
 {
@@ -14,30 +15,52 @@ namespace nethegre.csharp.util.resource
         //Create an instance of the log manager class
         readonly static LogManager log = new LogManager(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType);
         //Stores the resource directory path that is currently used
-        internal static string _resourceDirectoryPath = ConfigManager.config["resourceDirectory"] ?? "resources/";
+        internal static string _resourceDirectoryPathPrefix = ConfigManager.config["resourceDirectoryPrefix"] ?? "resources/";
 
         /// <summary>
         /// Retrieve the file based on the path provided. Will return null FileStream if the file didn't exist.
+        /// NOTE: If the directoryPrefix is not used the path will need to start relative to the working directory or be an absolute path.
         /// </summary>
-        /// <param name="fileName"></param>
+        /// <param name="filePath"></param>
+        /// <param name="useDirectoryPrefix"></param>
         /// <returns></returns>
-        public static FileStream RetrieveResource(string fileName)
+        public static FileStream? RetrieveResource(string filePath, bool useDirectoryPrefix = false)
         {
-            FileStream resourceFile = null;
+            FileStream? resourceFile = null;
 
-            //Determine if the resource exists
-            if (File.Exists(_resourceDirectoryPath + fileName))
+            //Check if we are using a directoryPrefix
+            if (useDirectoryPrefix)
             {
-                resourceFile = File.OpenRead(_resourceDirectoryPath + fileName);
+                log.Debug("Using the directoryPrefix");
+
+                //Determine if the resource exists
+                if (File.Exists(_resourceDirectoryPathPrefix + filePath))
+                {
+                    resourceFile = File.OpenRead(_resourceDirectoryPathPrefix + filePath);
+                    log.Debug("Opened the file at the provided path with directory prefix.");
+                }
+                else
+                {
+                    log.Warn("Failed to find expected resource [" + filePath + "] in folder [" + _resourceDirectoryPathPrefix + "]");
+
+                    //Check to make sure that the resource directory exists
+                    if (Directory.Exists(_resourceDirectoryPathPrefix))
+                    {
+                        log.Error("Resource directory doesn't exist!");
+                    }
+                }
             }
             else
             {
-                log.Warn("Failed to find expected resource [" + fileName + "] in folder [" + _resourceDirectoryPath + "]");
-
-                //Check to make sure that the resource directory exists
-                if (Directory.Exists(_resourceDirectoryPath))
+                //Determine if the resource exists
+                if (File.Exists(filePath))
                 {
-                    log.Error("Resource directory doesn't exist!");
+                    resourceFile = File.OpenRead(filePath);
+                    log.Debug("Opened the file at the provided path.");
+                }
+                else
+                {
+                    log.Warn("Failed to find expected resource at the path [" + filePath + "]");
                 }
             }
 
@@ -45,38 +68,71 @@ namespace nethegre.csharp.util.resource
         }
 
         /// <summary>
-        /// Returns all of the files in the directory path.
-        /// NOTE: The directory path starts at the root directory of the project.
+        /// Returns all of the files in the directory path. Will return empty collection if the path is invalid.
+        /// NOTE: If the directoryPrefix is not used the path will need to start relative to the working directory or be an absolute path.
         /// </summary>
         /// <param name="folderPath"></param>
+        /// <param name="useDirectoryPrefix"></param>
         /// <returns></returns>
-        public static List<FileStream> RetrieveResources(string folderPath)
+        public static Collection<FileStream> RetrieveResources(string folderPath, bool useDirectoryPrefix = false)
         {
-            List<FileStream> files = new List<FileStream>();
+            Collection<FileStream> files = new Collection<FileStream>();
 
             //Verify that the provided folder path is not null
             if (folderPath != null)
             {
-                //Determine if the directory exists
-                if (Directory.Exists(folderPath))
+                //Check if we are using the directoryPrefix
+                if (useDirectoryPrefix)
                 {
-                    //Loop through all the files in the directory
-                    foreach (string filePath in Directory.EnumerateFiles(folderPath))
+                    log.Debug("Using the directoryPrefix");
+
+                    //Determine if the directory exists
+                    if (Directory.Exists(_resourceDirectoryPathPrefix + folderPath))
                     {
-                        try
+                        //Loop through all the files in the directory
+                        foreach (string filePath in Directory.EnumerateFiles(_resourceDirectoryPathPrefix + folderPath))
                         {
-                            //Retrieve the FileStream for each file in the directory
-                            files.Add(File.OpenRead(filePath));
+                            try
+                            {
+                                //Retrieve the FileStream for each file in the directory
+                                files.Add(File.OpenRead(filePath));
+                                log.Debug("Added file [" + filePath + "] to the collection.");
+                            }
+                            catch (Exception ex)
+                            {
+                                log.Error("Failed to read the file at file path [" + filePath + "]");
+                            }
                         }
-                        catch (Exception ex)
-                        {
-                            log.Error("Failed to read the file at file path [" + filePath + "]");
-                        }
+                    }
+                    else
+                    {
+                        log.Error("Directory path provided does not exist");
                     }
                 }
                 else
                 {
-                    log.Error("Directory path provided does not exist");
+                    //Determine if the directory exists
+                    if (Directory.Exists(folderPath))
+                    {
+                        //Loop through all the files in the directory
+                        foreach (string filePath in Directory.EnumerateFiles(folderPath))
+                        {
+                            try
+                            {
+                                //Retrieve the FileStream for each file in the directory
+                                files.Add(File.OpenRead(filePath));
+                                log.Debug("Added file [" + filePath + "] to the collection.");
+                            }
+                            catch (Exception ex)
+                            {
+                                log.Error("Failed to read the file at file path [" + filePath + "]");
+                            }
+                        }
+                    }
+                    else
+                    {
+                        log.Error("Directory path provided does not exist");
+                    }
                 }
             }
             else
@@ -92,24 +148,24 @@ namespace nethegre.csharp.util.resource
         /// from the config file with the key name "resourceDirectory".
         /// </summary>
         /// <returns></returns>
-        public static string GetResourceFolderPath()
+        public static string GetResourceDirectoryPathPrefix()
         {
-            return _resourceDirectoryPath;
+            return _resourceDirectoryPathPrefix;
         }
 
         /// <summary>
-        /// Sets the value of the resource directory path if the provided path exists. This will
+        /// Sets the value of the resource directory path prefix if the provided path exists. This will
         /// override the default value found in the config file with the key "resourceDirectory".
         /// </summary>
-        /// <param name="folderPath"></param>
+        /// <param name="directoryPrefix"></param>
         /// <returns></returns>
-        public static void SetResourceFolderPath(string folderPath)
+        public static void SetResourcePathPrefix(string directoryPrefix)
         {
             //Check to make sure the directory exists
-            if (Directory.Exists(folderPath))
+            if (Directory.Exists(directoryPrefix))
             {
                 //Set the new resource folder path
-                _resourceDirectoryPath = folderPath;
+                _resourceDirectoryPathPrefix = directoryPrefix;
             }
         }
     }
