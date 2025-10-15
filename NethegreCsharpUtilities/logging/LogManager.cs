@@ -5,7 +5,7 @@ using nethegre.csharp.util.config;
 namespace nethegre.csharp.util.logging
 {
     /// <summary>
-    /// A class that provides simple logging functionality.
+    /// A class that provides simple logging functionality. Recommended implementation is "new LogManager(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType);"
     /// </summary>
     public class LogManager
     {

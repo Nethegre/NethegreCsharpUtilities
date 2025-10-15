@@ -1,13 +1,5 @@
 ﻿using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.Primitives;
-using System.Collections.Concurrent;
 using System.Collections.ObjectModel;
-using System.IO;
-using System.Reflection.Metadata;
-using System.Runtime.CompilerServices;
-using System.Runtime.ExceptionServices;
-using System.Security.AccessControl;
-using static nethegre.csharp.util.logging.LogManager;
 
 namespace nethegre.csharp.util.config
 {
