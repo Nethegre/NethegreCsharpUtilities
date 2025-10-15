@@ -16,7 +16,7 @@ namespace nethegre.csharp.util.logging
         //Used to stop the log processing
         private static bool _shutdown = false;
         //Used to track if the log processing has been started or not
-        private static Task _backgroundProcessing = null;
+        private static Task _backgroundProcessing = Task.CompletedTask;
 
         //Config variables
 
@@ -122,18 +122,18 @@ namespace nethegre.csharp.util.logging
                 //Setup the log file
                 SetupLogFile();
 
-                //Need to make sure that only one thread is accessing _backgroundProcessing at the same time or things could get messy
-                lock (_backgroundProcessing) 
+                //Check to make sure the backgroundProcessing isn't somehow null (this shouldn't be possible)
+                if (_backgroundProcessing == null)
                 {
-                    //Check to make sure another background process hasn't been started
-                    if (_backgroundProcessing == null)
+                    //Start the processing task if it was null
+                    _backgroundProcessing = Task.Run(ProcessLogs);
+                }
+                else
+                {
+                    //Need to make sure that only one thread is accessing _backgroundProcessing at the same time or things could get messy
+                    lock (_backgroundProcessing)
                     {
-                        //Start the processing task
-                        _backgroundProcessing = Task.Run(ProcessLogs);
-                    }
-                    else
-                    {
-                        //Check that the background task has not failed for some reason
+                        //Check to see if the background processing is completed or something
                         if (_backgroundProcessing.IsCanceled || _backgroundProcessing.IsFaulted || _backgroundProcessing.IsCompleted)
                         {
                             //Dispose of the background thread so we don't cause a memory leak or something

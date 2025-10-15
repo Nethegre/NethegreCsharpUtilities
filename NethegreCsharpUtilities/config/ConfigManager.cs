@@ -47,6 +47,8 @@ namespace nethegre.csharp.util.config
         static ConfigManager()
         {
             _backgroundProcessing = Task.Run(CheckForExternalNestedConfigFiles);
+            //Provide initial setup for the config implementation
+            _config = AddDefaultConfigFile().Build();
         }
 
         /// <summary>
@@ -61,7 +63,7 @@ namespace nethegre.csharp.util.config
         public const string nestedConfigFileKey = "nestedConfig";
 
         //The actual functional IConfiguration implementation hidden from the public by the readonly "config" item
-        internal static IConfiguration _config = AddDefaultConfigFile().Build();
+        internal static IConfiguration _config;
 
         //Save the additional file paths to this static list so that every time we add more we can use the old ones too
         internal static List<string> _configurationFilePaths = new List<string>();
